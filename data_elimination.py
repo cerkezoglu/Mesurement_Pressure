@@ -48,17 +48,19 @@ rho = 1.204 #Air @ 20 C
 
 velocity = [sqrt(2*abs(delp)/rho) for delp in delp_pa] #v = sqrt((p0 - p1)/ rho)
 
-def eliminate_data(x):
+def eliminate_data(x,time):
     n = len(x)
     sigma, xm = calculate_std_xm(x)
     disig = cal_di_sig(x)
     critic_disig = cal_critic_disig(n)
-
+    a = []
+    b = []
     for i in range(n):
-        if abs(disig[i]) >= critic_disig:
-            x.pop(i)
+        if abs(disig[i]) < critic_disig:
+            a.append(x[i])
+            b.append(time[i])
 
-    return x
+    return a, b
 n = len(velocity)
 sigma, average = calculate_std_xm(velocity)
 critic_disig = cal_critic_disig(n)
@@ -74,7 +76,27 @@ plt.legend()
 plt.show()
 
 
+std_before, xm_before = calculate_std_xm(velocity)
+a, b = eliminate_data(np.array(velocity), np.array(time))
+std_after, xm_after = calculate_std_xm(a)
+
+plt.scatter(b,a)
+plt.plot(b,a,'--')
+plt.plot(time, average+critic_disig*sigma*np.ones(n), 'r')
+plt.plot(time, average-critic_disig*sigma*np.ones(n), 'r', label = 'dmax lines')
+plt.plot(time, xm_after*np.ones(n), 'black')
+plt.show()
+
+print("std_before: ", std_before, "xm_before : ", xm_before)
+print("std_after: ", std_after, "xm_after: ", xm_after)
+
+# plt.plot(time, eliminate_data(voltage), '--')
+# plt.scatter(time, eliminate_data(voltage))
+# plt.show()
 
 Table = np.array([np.array(time).T, np.array(voltage).T, np.array(delp_mmh2o).T, np.array(delp_pa).T, np.array(velocity).T, np.array(cal_di_sig(velocity)).T], dtype='float32')
 
-pd.DataFrame(Table.T).to_csv('table.csv', header=['time', 'voltage', 'delp_mmh2o', 'delp_pa', 'velocity', 'di_sig'])
+print(max(cal_di_sig(velocity)))
+print(calculate_std_xm(velocity))
+print(cal_critic_disig(n))
+# pd.DataFrame(Table.T).to_csv('table_2.csv', header=['time', 'voltage', 'delp_mmh2o', 'delp_pa', 'velocity', 'di_sig'])
